@@ -20,7 +20,8 @@ def run_example():
         print('cannot connect to device: {}'.format(e))
         return 1
     
-    laser.sweep()
+    laser.sweep_init()
+    laser.sweep_init()
     scpi.sendSimpleMsg(b'CALC2:SCAL REF\r\n')
 
     id = scpi.getSimpleMsg(b':STAT:QUES:COND?\r\n')
