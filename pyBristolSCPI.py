@@ -39,6 +39,12 @@ class pyBristolSCPI:
         out = self.getSimpleMsg(msg)
         out.replace(b'\n\r',b'')
         return float(out.decode('ascii'))
+    
+    def readPOW(self):
+        msg = b':READ:POW?\r\n'
+        out = self.getSimpleMsg(msg)
+        out.replace(b'\n\r',b'')
+        return float(out.decode('ascii'))
 
     ## This function will handle a general skippy command that returns a single scalar response from the instrument.
     # @param msg - ASCII encoded SCPI command.

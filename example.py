@@ -20,7 +20,7 @@ def run_example():
         return 1
     laser = laserClass()
     laser.sweep()
-    scpi.sendSimpleMsg(b'CALC2:SCAL REF\r\n')
+    scpi.sendSimpleMsg(b'CALC2:SCAL PEAK\r\n')
 
     id = scpi.getSimpleMsg(b':STAT:QUES:COND?\r\n')
     print("Test ",format(id))

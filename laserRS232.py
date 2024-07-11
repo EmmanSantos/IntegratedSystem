@@ -83,7 +83,7 @@ class laserClass:
     def next_wl(self):
         self.curr_ch = self.curr_ch + self.increment
         self.set_wl(self.curr_ch)
-        if self.curr_ch == self.ch_end:
+        if self.curr_ch < self.ch_end:
             self.sweep_hasnext = False
         
 
