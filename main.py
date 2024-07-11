@@ -40,3 +40,4 @@ if __name__ == "__main__":
     instrument = SerialInstrument(COM_PORT, TIMEOUT)
     instrument.disconnect()
 
+    

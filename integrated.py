@@ -20,12 +20,39 @@ def run_example():
         print('cannot connect to device: {}'.format(e))
         return 1
     
-    laser.sweep_init()
-    laser.sweep_init()
+    cont_flag = 'y'
+    while(cont_flag.lower() == 'y' ):
+        laser.sweep_init()
+        
+        n = laser.n_samples
+
+        input("Press Enter to Start Sweep")
+    
+        while laser.sweep_hasnext:
+            print("Wait 3s for laser to stabilize")
+            time.sleep(3)
+            print("Current Channel: ",laser.curr_ch)
+
+            for i in range(0,n):
+                wl = scpi.readWL()
+                pow = scpi.getSimpleMsg(b'FETC:SCAL:POW?\r\n')
+                print('wavelength = {}, power {}'.format(wl,pow.decode('ascii')))
+            
+            laser.next_wl()
+
+        cont_flag = input("Start another run?(y/n)")
+
+
+
+
+
+    
     scpi.sendSimpleMsg(b'CALC2:SCAL REF\r\n')
 
     id = scpi.getSimpleMsg(b':STAT:QUES:COND?\r\n')
     print("Test ",format(id))
+
+    
     #general instructions
     for i in range (0,10):
         wl = scpi.readWL()
