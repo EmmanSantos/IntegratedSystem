@@ -5,10 +5,40 @@ from pyBristolSCPI import *
 import time
 from laserRS232 import laserClass
 import matplotlib.pyplot as plt
+import os
+import csv
+import datetime
+import sys
+from pathvalidate import ValidationError, validate_filename
+
+def dir_create():
+   
+    dir_dict = {
+        "csv_dir" : "./OUTPUT_FILES/csv_outputs",
+        "avg_csv_dir" : "./OUTPUT_FILES/csv_averaged",
+        "graph_dir" :"./OUTPUT_FILES/graphs"
+    }
+
+    for value in dir_dict.values():
+        if not os.path.exists(value):
+            os.makedirs(value)
+    return dir_dict
+
+def store_to_csv(name,dir,col1,col2):
+
+    with open(dir+"/"+name+".csv", mode='w', newline='') as file:
+        csv_writer = csv.writer(file)
+        header = ['Wavelength', 'Power']
+        csv_writer.writerow(header)
+
+        for i in range(0,len(col1)):
+            csv_writer.writerow([col1[i],col2[i]])
 
 def main():
+    dir_dict = dir_create()
     wl_plot = []
     pow_plot = []
+    
     try:
         # Instantiate OSA and laser objects which also initiates connection to both
         scpi = pyBristolSCPI()
@@ -25,6 +55,27 @@ def main():
         
         n = laser.n_samples
 
+        while(True):
+
+            #Following code is for validating filename
+            try:
+                name = input("Enter file name for this test: ")
+                ts = datetime.datetime.now().strftime("%Y%m%d-%H_%M_%S")
+            except Exception as e:
+                print('Input error: {}'.format(e))
+                continue
+            try:
+                filename = name+"-"+ts
+                validate_filename(filename,platform="Windows")
+            except ValidationError as e:
+                print(f"{e}\n", file=sys.stderr)
+                continue
+           
+            print(filename)
+            
+            break
+
+            
         input("Press Enter to Start Sweep")
 
         plt.close()
@@ -33,7 +84,7 @@ def main():
         wl_plot = []
         pow_plot = [] 
 
-        
+
         while laser.ch_in_range:
             print("Wait 4s for laser to stabilize")
             time.sleep(4)
@@ -46,32 +97,37 @@ def main():
                 pow_plot.append(pow)
                 print('wavelength = {}, power {}'.format(wl,pow))
             
-            
+            # plt.ion()
             ax.clear()
-            ax.set_title("_linegraph")
+            ax.set_title(name)
             ax.set_xlabel("Wavelength (nm)")
             ax.set_ylabel("Output Power (dBm)")
             ax.grid(alpha=0.7)
             ax.plot(wl_plot,pow_plot)
             # plt.savefig(graph_dir+"/"+name+"_linegraph.png")
+           
             plt.draw()
             plt.pause(0.1)
-
-
             
+
 
             laser.next_wl()
 
+        print("\nSweep Finished\nCllose graph to continue")
+        # plt.ioff()
         plt.close()
         plt.figure(figsize=(15,7))
         plt.plot(wl_plot,pow_plot)
-        plt.title("_linegraph")
+        plt.title(name)
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Output Power (dBm)")
         plt.grid(alpha=0.7)
-        # plt.savefig(graph_dir+"/"+name+"_linegraph.png")
+        plt.savefig(dir_dict['graph_dir']+"/"+filename+"_linegraph.png")
         plt.show()
         plt.close()
+
+        store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
+
         cont_flag = input("Start another run?(y/n)")
 
 
