@@ -3,6 +3,7 @@ import serial.tools.list_ports
 from time import sleep
 
 class laserClass:
+    #This function initializes RS232 connection with the laser
     def __init__(self):
         self.n_samples = 0
         self.ch_start = 0
@@ -24,12 +25,14 @@ class laserClass:
         self.laser_port.bytesize = 8
         print(self.laser_port)
     
+    #This function takes in a channel number and sends the corresponding byte array to the laser
     def set_wl(self,ch_number):
         datah = ch_number//256
         datal = ch_number%256
         send_array = bytearray([0x00,0x01,0x01,datah,datal,datah+datal+2])
         self.laser_port.write(send_array)
 
+    #This section runs the routine for setting the sweep parameters
     def param_set(self):
                 print("\n \nSET SWEEP PARAMETERS")
                 inp_loop = True
@@ -45,7 +48,7 @@ class laserClass:
                 return [arg_ch_start,arg_ch_end,arg_n_samples]
 
 
-
+    #This function runs the initialization of a sweep; includes resetting the wavelength and other variables
     def sweep_init(self):
         
         if(self.first_run_ind == 1):
@@ -58,36 +61,19 @@ class laserClass:
             if(input("Would you like to enter new parameters?(y/n)").lower() == 'y'):
                 [self.ch_start,self.ch_end,self.n_samples] = self.param_set()
         
-        self.increment = -1 if self.ch_start>self.ch_end else 1
+        
 
         #set laser wavelength to channel start after initialization
         self.set_wl(self.ch_start)
         self.curr_ch = self.ch_start
-        self.sweep_hasnext = True
+        self.ch_in_range = True
         self.first_run_ind = 0
 
-        # input("Press Enter to start sweep")  
-        # for i in range(self.ch_start,self.ch_end+self.increment,self.increment):
-        #     ch_num = i
-        #     datah = ch_num//256
-        #     datal = ch_num%256
-        #     send_array = bytearray([0x00,0x01,0x01,datah,datal,datah+datal+2])
-        #     print("Channel Number: ",ch_num)
-        #     print(send_array)
-        #     self.laser_port.write(send_array)
-        #     sleep(self.n_samples)
 
-        # self.first_run_ind = 0
-        # print("\n \nSWEEP FINISHED")
 
+    #This function iterates through the channel numbers. Flags ch_in_range to indicate when the wavelengths are done
     def next_wl(self):
-        self.curr_ch = self.curr_ch + self.increment
+        self.curr_ch = self.curr_ch - 1
         self.set_wl(self.curr_ch)
-        if self.curr_ch < self.ch_end:
-            self.sweep_hasnext = False
-        
-
-# cont_flag = 'y'
-# while(cont_flag.lower() == 'y' ):
-#     sweep()
-#     cont_flag = input("Start another run?(y/n)")
+        if self.curr_ch == self.ch_end:
+            self.ch_in_range = False

@@ -1,22 +1,16 @@
 
-## @example scpi_example.py
-# This is an example using the bristolSCPI python class. 
-# @details There are some general functions that are 
-# common to our instruments, and some special functions that are instrument specific.
-# The instrument specific examples have been commented out. Simply uncomment them to run.
-#
-# Example:
+
 
 from pyBristolSCPI import *
 import time
 from laserRS232 import laserClass
 import matplotlib.pyplot as plt
 
-def run_example():
+def main():
     wl_plot = []
     pow_plot = []
     try:
-        
+        # Instantiate OSA and laser objects which also initiates connection to both
         scpi = pyBristolSCPI()
         laser = laserClass()
         scpi.sendSimpleMsg(b'CALC2:SCAL PEAK\r\n')
@@ -24,7 +18,8 @@ def run_example():
         print('cannot connect to device: {}'.format(e))
         return 1
     
-    cont_flag = 'y'
+
+    cont_flag = 'y' #Used to indicate if user wants another run
     while(cont_flag.lower() == 'y' ):
         laser.sweep_init()
         
@@ -37,7 +32,9 @@ def run_example():
         ax = fig.add_subplot(1,1,1)
         wl_plot = []
         pow_plot = [] 
-        while laser.sweep_hasnext:
+
+        
+        while laser.ch_in_range:
             print("Wait 4s for laser to stabilize")
             time.sleep(4)
             print("Current Channel: ",laser.curr_ch)
@@ -81,5 +78,5 @@ def run_example():
    
     return 0
 
-print('running example')
-run_example()
+print('Running Integrated System')
+main()
