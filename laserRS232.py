@@ -19,21 +19,26 @@ class laserClass:
             self.laser_port.bytesize = 8
             print(self.laser_port)
         except: 
-            print("Laser not found in COM",comport,"\nPlease enter the correct comport")
+            print("\nLaser not found in COM",comport,"\nPlease enter the correct comport\n")
             for port in ports:
                 print(f"Port: {port.device}")
                 print(f"Description: {port.description}")
                 print(f"Hardware ID: {port.hwid}\n")
-
-            print("Laser port is usually labeled as SER=FTDI on the Hardware ID line")
-            comport = "COM"+input("Enter laser COM port number: ")
-            print(comport)
-            self.laser_port = serial.Serial(comport)
-            self.laser_port.baudrate = 9600
-            self.laser_port.stopbits= 1
-            self.laser_port.parity = 'N'
-            self.laser_port.bytesize = 8
-            print(self.laser_port)
+            while True:
+                try:
+                    print("Laser port is usually labeled as SER=FTDI on the Hardware ID line")
+                    comport = "COM"+input("Enter laser COM port number: ")
+                    print(comport)
+                    self.laser_port = serial.Serial(comport)
+                    self.laser_port.baudrate = 9600
+                    self.laser_port.stopbits= 1
+                    self.laser_port.parity = 'N'
+                    self.laser_port.bytesize = 8
+                    print(self.laser_port)
+                    break
+                except:
+                    print("\nInvalid COM number\nTry Again\n")
+                    continue
     
     #This function takes in a channel number and sends the corresponding byte array to the laser
     def set_wl(self,ch_number):

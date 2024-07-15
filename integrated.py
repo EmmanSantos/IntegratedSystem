@@ -5,12 +5,14 @@ from pyBristolSCPI import *
 import time
 from laserRS232 import laserClass
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 import os
 import csv
 import datetime
 import sys
 from pathvalidate import ValidationError, validate_filename
 from multiprocessing import Process
+import multiprocessing as mp
 
 def dir_create():
    
@@ -25,6 +27,35 @@ def dir_create():
             os.makedirs(value)
     return dir_dict
 
+def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
+    plt.close()
+
+    x_data,y_data=[],[]
+
+    figure = plt.figure(num=1,figsize=(15,7))
+    ax = figure.add_subplot(1,1,1)
+    ax.clear()
+    ax.set_title(name)
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel("Output Power (dBm)")
+    ax.grid(alpha=0.7)
+    # ax.plot(wl_plot,pow_plot)
+    line, = plt.plot(x_data, y_data, '-')
+
+
+    def update(frame,x_q: mp.Queue,y_q: mp.Queue):
+        if x_q.empty() == False:
+            y_data.append(y_q.get())
+            x_data.append(x_q.get())
+
+        line.set_data(x_data, y_data)
+        figure.gca().relim()
+        figure.gca().autoscale_view()
+        return line,
+
+    animation = FuncAnimation(figure, update,fargs=[x_q,y_q], interval=200)
+    plt.show()
+
 def store_to_csv(name,dir,col1,col2):
 
     with open(dir+"/"+name+".csv", mode='w', newline='') as file:
@@ -35,9 +66,6 @@ def store_to_csv(name,dir,col1,col2):
         for i in range(0,len(col1)):
             csv_writer.writerow([col1[i],col2[i]])
 
-def plot_subproc(wl,pow):
-    plt.plot(wl,pow)
-    plt.show
 
 def main():
     dir_dict = dir_create()
@@ -50,12 +78,15 @@ def main():
         laser = laserClass()
         scpi.sendSimpleMsg(b'CALC2:SCAL PEAK\r\n')
     except Exception as e:
-        print('cannot connect to device: {}'.format(e))
+        print('Cannot connect to device: {}'.format(e))
         return 1
     
 
     cont_flag = 'y' #Used to indicate if user wants another run
     while(cont_flag.lower() == 'y' ):
+        
+
+
         laser.sweep_init()
         
         n = laser.n_samples
@@ -79,15 +110,18 @@ def main():
             print(filename)
             
             break
-
+        
+        l_plot = []
+        pow_plot = []
             
         input("Press Enter to Start Sweep")
 
-        plt.close()
-        fig = plt.figure(num=1,figsize=(15,7))
-        ax = fig.add_subplot(1,1,1)
-        wl_plot = []
-        pow_plot = [] 
+        # Instantation for plot subprocess
+        y_q = mp.Queue()
+        x_q = mp.Queue()
+        plot = mp.Process(target=plot_subproc,args=[x_q,y_q,filename])
+        plot.start()
+
 
 
         while laser.ch_in_range:
@@ -100,29 +134,19 @@ def main():
                 pow = scpi.readPOW()
                 wl_plot.append(wl)
                 pow_plot.append(pow)
+
+                x_q.put(wl)
+                y_q.put(pow)
+
                 print('wavelength = {}, power {}'.format(wl,pow))
             
-            # plt.ion()
+
             laser.next_wl()
-            ax.clear()
-            ax.set_title(filename)
-            ax.set_xlabel("Wavelength (nm)")
-            ax.set_ylabel("Output Power (dBm)")
-            ax.grid(alpha=0.7)
-            ax.plot(wl_plot,pow_plot)
-            # plot_process = Process(target=plot_subproc,args=[wl_plot,pow_plot])
-            # plot_process.start()
-            # plt.savefig(graph_dir+"/"+name+"_linegraph.png")
-           
-            plt.draw()
-            plt.pause(0.1)
+            
+        plot.terminate()
             
 
-
-        
-
-        print("\nSweep Finished\nCllose graph to continue")
-        # plt.ioff()
+        print("\nSweep Finished\nClose graph to continue")
         plt.close()
         plt.figure(figsize=(15,7))
         plt.plot(wl_plot,pow_plot)
@@ -141,6 +165,9 @@ def main():
 
    
     return 0
+if __name__ == '__main__':
+    print('Running Integrated System')
+    mp.freeze_support()
+    main()
+    input("Enter to Close")
 
-print('Running Integrated System')
-main()

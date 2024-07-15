@@ -28,7 +28,7 @@ class pyBristolSCPI:
             self.skipOpeningMessage(0.5) 
         except Exception as e:
             raise e
-        print("Connection with wavemeter successful")
+        print("\nConnection with wavemeter successful")
 
     ## Implements the simple skippy command :READ:WAV? to read the wavelength and return a floating point value.
     # @param self - The object pointer.
@@ -67,7 +67,7 @@ class pyBristolSCPI:
     ##This function is implemented in the constructor to skip the opening telnet connection message.
     #@param wait_sec - time taken to read input message x3
     def skipOpeningMessage(self, wait_sec):
-        print('{}'.format("testing connection"))
+        print('{}'.format("Testing connection"))
         skip_count = 0
         while(True):
             #out = self.tn.rawq_getchar()
