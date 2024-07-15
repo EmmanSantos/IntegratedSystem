@@ -14,6 +14,7 @@ from pathvalidate import ValidationError, validate_filename
 from multiprocessing import Process
 import multiprocessing as mp
 
+#Create necessary directories, returns dictionary for use in main()
 def dir_create():
    
     dir_dict = {
@@ -27,11 +28,14 @@ def dir_create():
             os.makedirs(value)
     return dir_dict
 
+#Child process for displaying real time plot, passes queues and fileame as arguments
+
 def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
     plt.close()
 
     x_data,y_data=[],[]
 
+    #Initialize plot
     figure = plt.figure(num=1,figsize=(15,7))
     ax = figure.add_subplot(1,1,1)
     ax.clear()
@@ -42,8 +46,10 @@ def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
     # ax.plot(wl_plot,pow_plot)
     line, = plt.plot(x_data, y_data, '-')
 
-
+    #Update routine that is called by FuncAnimation instance to update plot data, returns 2D tuple that is used to graph
     def update(frame,x_q: mp.Queue,y_q: mp.Queue):
+
+        #check if queue is not empty before getting from queue
         if x_q.empty() == False:
             y_data.append(y_q.get())
             x_data.append(x_q.get())
@@ -86,14 +92,15 @@ def main():
     while(cont_flag.lower() == 'y' ):
         
 
-
+        #Initialize sweep parameters
         laser.sweep_init()
         
         n = laser.n_samples
 
+        #While loop for validating filename
         while(True):
 
-            #Following code is for validating filename
+            #Following code is for validating filename; try and except is for checking non character inputs
             try:
                 name = input("Enter file name for this test: ")
                 ts = datetime.datetime.now().strftime("%Y%m%d-%H_%M_%S")
@@ -110,25 +117,29 @@ def main():
             print(filename)
             
             break
-        
+
+        #Reset plot arrays 
         wl_plot = []
         pow_plot = []
             
         input("Press Enter to Start Sweep")
 
-        # Instantation for plot subprocess
+        # Instantation  for Queues; queues can be passed between subprocesses and thus used for passing data
         y_q = mp.Queue()
         x_q = mp.Queue()
+
+        # Instantation for plot subprocess
         plot = mp.Process(target=plot_subproc,args=[x_q,y_q,filename])
         plot.start()
 
 
-
+        #  Main sweep loop
         while laser.ch_in_range:
             print("Wait 5s for laser to stabilize")
             time.sleep(5)
             print("Current Channel: ",laser.curr_ch)
 
+            # Get n measurements and store to respective locations
             for i in range(0,n):
                 wl = scpi.readWL()
                 pow = scpi.readPOW()
@@ -165,6 +176,8 @@ def main():
 
    
     return 0
+
+# Safeguards for subprocesses
 if __name__ == '__main__':
     print('Running Integrated System')
     mp.freeze_support()

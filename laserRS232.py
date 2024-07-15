@@ -5,12 +5,16 @@ from time import sleep
 class laserClass:
     #This function initializes RS232 connection with the laser
     def __init__(self):
+
+        #initialize default variables as well as default com port
         self.n_samples = 10
         self.ch_start = 100
         self.ch_end = 1
         self.first_run_ind = 1
         comport = 'COM4'
         ports = serial.tools.list_ports.comports()
+
+        #Try connecting to default COM value
         try:
             self.laser_port = serial.Serial(comport)
             self.laser_port.baudrate = 9600
@@ -26,6 +30,7 @@ class laserClass:
                 print(f"Description: {port.description}")
                 print(f"Hardware ID: {port.hwid}\n")
             while True:
+                #Try loop for manual connection
                 try:
                     print("Laser port is usually labeled as SER=FTDI on the Hardware ID line")
                     comport = "COM"+input("Enter laser COM port number: ")
