@@ -10,6 +10,7 @@ import csv
 import datetime
 import sys
 from pathvalidate import ValidationError, validate_filename
+from multiprocessing import Process
 
 def dir_create():
    
@@ -33,6 +34,10 @@ def store_to_csv(name,dir,col1,col2):
 
         for i in range(0,len(col1)):
             csv_writer.writerow([col1[i],col2[i]])
+
+def plot_subproc(wl,pow):
+    plt.plot(wl,pow)
+    plt.show
 
 def main():
     dir_dict = dir_create()
@@ -86,8 +91,8 @@ def main():
 
 
         while laser.ch_in_range:
-            print("Wait 4s for laser to stabilize")
-            time.sleep(4)
+            print("Wait 5s for laser to stabilize")
+            time.sleep(5)
             print("Current Channel: ",laser.curr_ch)
 
             for i in range(0,n):
@@ -98,12 +103,15 @@ def main():
                 print('wavelength = {}, power {}'.format(wl,pow))
             
             # plt.ion()
+            laser.next_wl()
             ax.clear()
-            ax.set_title(name)
+            ax.set_title(filename)
             ax.set_xlabel("Wavelength (nm)")
             ax.set_ylabel("Output Power (dBm)")
             ax.grid(alpha=0.7)
             ax.plot(wl_plot,pow_plot)
+            # plot_process = Process(target=plot_subproc,args=[wl_plot,pow_plot])
+            # plot_process.start()
             # plt.savefig(graph_dir+"/"+name+"_linegraph.png")
            
             plt.draw()
@@ -111,14 +119,14 @@ def main():
             
 
 
-            laser.next_wl()
+        
 
         print("\nSweep Finished\nCllose graph to continue")
         # plt.ioff()
         plt.close()
         plt.figure(figsize=(15,7))
         plt.plot(wl_plot,pow_plot)
-        plt.title(name)
+        plt.title(filename)
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Output Power (dBm)")
         plt.grid(alpha=0.7)
