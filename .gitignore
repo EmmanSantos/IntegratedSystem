@@ -162,3 +162,7 @@ cython_debug/
 #csv and outputs
 *.csv
 *.png
+
+figtest.py
+
+test_files

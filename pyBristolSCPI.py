@@ -28,6 +28,7 @@ class pyBristolSCPI:
             self.skipOpeningMessage(0.5) 
         except Exception as e:
             raise e
+        print("Connection with wavemeter successful")
 
     ## Implements the simple skippy command :READ:WAV? to read the wavelength and return a floating point value.
     # @param self - The object pointer.

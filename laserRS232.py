@@ -5,25 +5,35 @@ from time import sleep
 class laserClass:
     #This function initializes RS232 connection with the laser
     def __init__(self):
-        self.n_samples = 0
-        self.ch_start = 0
-        self.ch_end = 0
+        self.n_samples = 10
+        self.ch_start = 100
+        self.ch_end = 1
         self.first_run_ind = 1
+        comport = 4
         ports = serial.tools.list_ports.comports()
-        for port in ports:
-            print(f"Port: {port.device}")
-            print(f"Description: {port.description}")
-            print(f"Hardware ID: {port.hwid}\n")
+        try:
+            self.laser_port = serial.Serial(comport)
+            self.laser_port.baudrate = 9600
+            self.laser_port.stopbits= 1
+            self.laser_port.parity = 'N'
+            self.laser_port.bytesize = 8
+            print(self.laser_port)
+        except: 
+            print("Laser not found in COM",comport,"\nPlease enter the correct comport")
+            for port in ports:
+                print(f"Port: {port.device}")
+                print(f"Description: {port.description}")
+                print(f"Hardware ID: {port.hwid}\n")
 
-        print("Laser port is usually labeled as SER=FTDI on the Hardware ID line")
-        comport = "COM"+input("Enter laser COM port number: ")
-        print(comport)
-        self.laser_port = serial.Serial(comport)
-        self.laser_port.baudrate = 9600
-        self.laser_port.stopbits= 1
-        self.laser_port.parity = 'N'
-        self.laser_port.bytesize = 8
-        print(self.laser_port)
+            print("Laser port is usually labeled as SER=FTDI on the Hardware ID line")
+            comport = "COM"+input("Enter laser COM port number: ")
+            print(comport)
+            self.laser_port = serial.Serial(comport)
+            self.laser_port.baudrate = 9600
+            self.laser_port.stopbits= 1
+            self.laser_port.parity = 'N'
+            self.laser_port.bytesize = 8
+            print(self.laser_port)
     
     #This function takes in a channel number and sends the corresponding byte array to the laser
     def set_wl(self,ch_number):
@@ -52,7 +62,12 @@ class laserClass:
     def sweep_init(self):
         
         if(self.first_run_ind == 1):
-            [self.ch_start,self.ch_end,self.n_samples] = self.param_set()
+            print("\nDEFAULT PARAMETERS")
+            print("Channel Start: ",str(self.ch_start))
+            print("Channel End: ",str(self.ch_end))
+            print("Samples per wavelength: ",str(self.n_samples))
+            if(input("Would you like to enter different parameters?(y/n)").lower() == 'y'):
+                [self.ch_start,self.ch_end,self.n_samples] = self.param_set()
         else:
             print("\nLAST RUN PARMETERS")
             print("Channel Start: ",str(self.ch_start))
