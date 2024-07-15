@@ -53,7 +53,7 @@ def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
         figure.gca().autoscale_view()
         return line,
 
-    animation = FuncAnimation(figure, update,fargs=[x_q,y_q], interval=200)
+    animation = FuncAnimation(figure, update,fargs=[x_q,y_q], interval=200,cache_frame_data=False)
     plt.show()
 
 def store_to_csv(name,dir,col1,col2):
@@ -111,7 +111,7 @@ def main():
             
             break
         
-        l_plot = []
+        wl_plot = []
         pow_plot = []
             
         input("Press Enter to Start Sweep")

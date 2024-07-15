@@ -9,7 +9,7 @@ class laserClass:
         self.ch_start = 100
         self.ch_end = 1
         self.first_run_ind = 1
-        comport = 4
+        comport = 'COM4'
         ports = serial.tools.list_ports.comports()
         try:
             self.laser_port = serial.Serial(comport)
@@ -18,8 +18,9 @@ class laserClass:
             self.laser_port.parity = 'N'
             self.laser_port.bytesize = 8
             print(self.laser_port)
+            print("\nConnection with Laser successful")
         except: 
-            print("\nLaser not found in COM",comport,"\nPlease enter the correct comport\n")
+            print("\nLaser not found in ",comport,"\nPlease enter the correct comport\n")
             for port in ports:
                 print(f"Port: {port.device}")
                 print(f"Description: {port.description}")
@@ -35,6 +36,7 @@ class laserClass:
                     self.laser_port.parity = 'N'
                     self.laser_port.bytesize = 8
                     print(self.laser_port)
+                    print("\nConnection with Laser successful")
                     break
                 except:
                     print("\nInvalid COM number\nTry Again\n")
