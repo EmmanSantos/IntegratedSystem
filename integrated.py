@@ -62,6 +62,10 @@ def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
     animation = FuncAnimation(figure, update,fargs=[x_q,y_q], interval=200,cache_frame_data=False)
     plt.show()
 
+    # while True:
+    #     
+    #     plt.pause(0.1)
+
 def store_to_csv(name,dir,col1,col2):
 
     with open(dir+"/"+name+".csv", mode='w', newline='') as file:
@@ -84,6 +88,8 @@ def main():
         scpi = pyBristolSCPI()
         laser = laserClass()
         scpi.sendSimpleMsg(b'CALC2:SCAL PEAK\r\n')
+        scpi.sendSimpleMsg(b'UNIT:POW DBM\r\n')
+        scpi.sendSimpleMsg(b'UNIT:WAV NM\r\n')
     except Exception as e:
         print('Cannot connect to device: {}'.format(e))
         return 1
@@ -144,25 +150,31 @@ def main():
             time.sleep(5)
             print("Current Channel: ",laser.curr_ch)
 
-
-
+            #incremenets number of items to be averaged if wavelength is in range
+            ave_counter = 0 
             # Get n measurements and store to respective locations
             for i in range(0,n):
                 wl = scpi.readWL()
                 pow = scpi.readPOW()
-                wl_plot.append(wl)
-                pow_plot.append(pow)
 
-                x_q.put(wl)
-                y_q.put(pow)
+                if(1527<wl and wl<1568):
+                    wl_plot.append(wl)
+                    pow_plot.append(pow)
+                    x_q.put(wl)
+                    y_q.put(pow)
+                    ave_counter = ave_counter+1
+                    print('wavelength = {}, power {}'.format(wl,pow))
+                else:
+                    print("Wavelength Out of Range; Power reading invalid")
 
-                print('wavelength = {}, power {}'.format(wl,pow))
-            
 
             laser.next_wl()
             #Get average wl and pow of last n measurements 
-            ave_wl_plot.append(stat.mean(wl_plot[-n:]))
-            ave_pow_plot.append(stat.mean(pow_plot[-n:]))
+            if ave_counter>0:
+                ave_wl_plot.append(stat.mean(wl_plot[-n:]))
+                ave_pow_plot.append(stat.mean(pow_plot[-n:]))
+            else:
+                print("Average not executed, n = 0")
             
         plot.terminate()
             
