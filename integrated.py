@@ -11,15 +11,15 @@ import csv
 import datetime
 import sys
 from pathvalidate import ValidationError, validate_filename
-from multiprocessing import Process
 import multiprocessing as mp
+import statistics as stat
 
 #Create necessary directories, returns dictionary for use in main()
 def dir_create():
    
     dir_dict = {
         "csv_dir" : "./OUTPUT_FILES/csv_outputs",
-        "avg_csv_dir" : "./OUTPUT_FILES/csv_averaged",
+        "ave_csv_dir" : "./OUTPUT_FILES/csv_averaged",
         "graph_dir" :"./OUTPUT_FILES/graphs"
     }
 
@@ -67,6 +67,7 @@ def store_to_csv(name,dir,col1,col2):
     with open(dir+"/"+name+".csv", mode='w', newline='') as file:
         csv_writer = csv.writer(file)
         header = ['Wavelength', 'Power']
+        csv_writer.writerow([name])
         csv_writer.writerow(header)
 
         for i in range(0,len(col1)):
@@ -109,6 +110,7 @@ def main():
                 continue
             try:
                 filename = name+"-"+ts
+                filename_ave = filename + "_ave"
                 validate_filename(filename,platform="Windows")
             except ValidationError as e:
                 print(f"{e}\n", file=sys.stderr)
@@ -121,6 +123,9 @@ def main():
         #Reset plot arrays 
         wl_plot = []
         pow_plot = []
+
+        ave_wl_plot = []
+        ave_pow_plot = []
             
         input("Press Enter to Start Sweep")
 
@@ -139,6 +144,8 @@ def main():
             time.sleep(5)
             print("Current Channel: ",laser.curr_ch)
 
+
+
             # Get n measurements and store to respective locations
             for i in range(0,n):
                 wl = scpi.readWL()
@@ -153,6 +160,9 @@ def main():
             
 
             laser.next_wl()
+            #Get average wl and pow of last n measurements 
+            ave_wl_plot.append(stat.mean(wl_plot[-n:]))
+            ave_pow_plot.append(stat.mean(pow_plot[-n:]))
             
         plot.terminate()
             
@@ -169,7 +179,17 @@ def main():
         plt.show()
         plt.close()
 
+        plt.figure(figsize=(15,7))
+        plt.plot(ave_wl_plot,ave_pow_plot)
+        plt.title(filename_ave)
+        plt.xlabel("Wavelength (nm)")
+        plt.ylabel("Output Power (dBm)")
+        plt.grid(alpha=0.7)
+        plt.savefig(dir_dict['graph_dir']+"/"+filename_ave)
+        plt.close()
+
         store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
+        store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
 
         cont_flag = input("Start another run?(y/n)")
 
