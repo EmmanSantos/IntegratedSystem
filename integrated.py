@@ -35,16 +35,7 @@ def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
 
     x_data,y_data=[],[]
 
-    #Initialize plot
-    figure = plt.figure(num=1,figsize=(15,7))
-    ax = figure.add_subplot(1,1,1)
-    ax.clear()
-    ax.set_title(name)
-    ax.set_xlabel("Wavelength (nm)")
-    ax.set_ylabel("Output Power (dBm)")
-    ax.grid(alpha=0.7)
-    # ax.plot(wl_plot,pow_plot)
-    line, = plt.plot(x_data, y_data, '-')
+  
 
     #Update routine that is called by FuncAnimation instance to update plot data, returns 2D tuple that is used to graph
     def update(frame,x_q: mp.Queue,y_q: mp.Queue):
@@ -59,8 +50,20 @@ def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
         figure.gca().autoscale_view()
         return line,
 
-    animation = FuncAnimation(figure, update,fargs=[x_q,y_q], interval=200,cache_frame_data=False)
-    plt.show()
+    
+    while True:
+          #Initialize plot
+        figure = plt.figure(num=1,figsize=(15,7))
+        ax = figure.add_subplot(1,1,1)
+        ax.clear()
+        ax.set_title(name)
+        ax.set_xlabel("Wavelength (nm)")
+        ax.set_ylabel("Output Power (dBm)")
+        ax.grid(alpha=0.7)
+        line, = plt.plot(x_data, y_data, '-')
+        animation = FuncAnimation(figure, update,fargs=[x_q,y_q], interval=200,cache_frame_data=False)
+        plt.show()
+        time.sleep(1)
 
     # while True:
     #     
@@ -173,6 +176,10 @@ def main():
             if ave_counter>0:
                 ave_wl_plot.append(stat.mean(wl_plot[-n:]))
                 ave_pow_plot.append(stat.mean(pow_plot[-n:]))
+                
+                store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
+                store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
+
             else:
                 print("Average not executed, n = 0")
             
@@ -197,7 +204,7 @@ def main():
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("Output Power (dBm)")
         plt.grid(alpha=0.7)
-        plt.savefig(dir_dict['graph_dir']+"/"+filename_ave)
+        plt.savefig(dir_dict['graph_dir']+"/"+filename_ave+".png")
         plt.close()
 
         store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
@@ -211,8 +218,12 @@ def main():
 
 # Safeguards for subprocesses
 if __name__ == '__main__':
-    print('Running Integrated System')
-    mp.freeze_support()
-    main()
-    input("Enter to Close")
+    try:
+        print('Running Integrated System')
+        mp.freeze_support()
+        main()
+        input("Enter to Close")
+    except:
+        print("Error")
+        input("Enter to Close")
 
