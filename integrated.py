@@ -184,10 +184,21 @@ def main():
                 print("Average not executed, n = 0")
             
         plot.terminate()
+
+        store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
+        store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
             
+        plt.close()
+        plt.figure(figsize=(15,7))
+        plt.plot(ave_wl_plot,ave_pow_plot)
+        plt.title(filename_ave)
+        plt.xlabel("Wavelength (nm)")
+        plt.ylabel("Output Power (dBm)")
+        plt.grid(alpha=0.7)
+        plt.savefig(dir_dict['graph_dir']+"/"+filename_ave+".png")
+        plt.close()
 
         print("\nSweep Finished\nClose graph to continue")
-        plt.close()
         plt.figure(figsize=(15,7))
         plt.plot(wl_plot,pow_plot)
         plt.title(filename)
@@ -198,17 +209,7 @@ def main():
         plt.show()
         plt.close()
 
-        plt.figure(figsize=(15,7))
-        plt.plot(ave_wl_plot,ave_pow_plot)
-        plt.title(filename_ave)
-        plt.xlabel("Wavelength (nm)")
-        plt.ylabel("Output Power (dBm)")
-        plt.grid(alpha=0.7)
-        plt.savefig(dir_dict['graph_dir']+"/"+filename_ave+".png")
-        plt.close()
 
-        store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
-        store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
 
         cont_flag = input("Start another run?(y/n)")
 
