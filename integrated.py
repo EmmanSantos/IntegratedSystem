@@ -13,6 +13,24 @@ import sys
 from pathvalidate import ValidationError, validate_filename
 import multiprocessing as mp
 import statistics as stat
+from math import log10
+
+def mw_ave_to_dB(input_array):
+    mw_array = []
+    for a in input_array:
+        mw_array.append(10**(a/10))
+    
+    # total = sum(mw_array)
+    # length = len(mw_array)
+    # ave_mw = total/length
+
+    ave_mw = stat.mean(mw_array)
+    
+    ave = 10*log10(ave_mw)
+    
+    return ave
+
+
 
 #Create necessary directories, returns dictionary for use in main()
 def dir_create():
@@ -174,8 +192,10 @@ def main():
             laser.next_wl()
             #Get average wl and pow of last n measurements 
             if ave_counter>0:
-                ave_wl_plot.append(stat.mean(wl_plot[-n:]))
-                ave_pow_plot.append(stat.mean(pow_plot[-n:]))
+                # ave_wl_plot.append(stat.mean(wl_plot[-n:]))
+                # ave_pow_plot.append(stat.mean(pow_plot[-n:]))
+                ave_wl_plot.append(mw_ave_to_dB(wl_plot[-n:]))
+                ave_pow_plot.append(mw_ave_to_dB(pow_plot[-n:]))
                 
                 store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
                 store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
