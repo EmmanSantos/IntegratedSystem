@@ -1,7 +1,7 @@
 
 
 
-from pyBristolSCPI import *
+from pyBristolSCPI_TB import *
 import time
 from pmodRS232 import pmodClass
 from laserRS232 import SIMTRUMlaserClass
@@ -16,29 +16,20 @@ import multiprocessing as mp
 import statistics as stat
 from math import log10
 
-class laserClass:
-    def __init__(self):
-        while True:
-            print("Choose laser source:\n1 - SIMTRUM Laser\n2 - PModLaser")
-            choice = int(input("Enter choice: "))
-            if choice == 1:
-                print(self.laser_device)
-                self.laser_device = SIMTRUMlaserClass()
-                break
-            elif choice == 2:
-                self.laser_device = pmodClass()
-                print(self.laser_device)
-                break
 
-    def set_wl(self,ch_number):
-        self.laser_device.set_wl(ch_number)
-    
-    def sweep_init(self):
-        self.laser_device.sweep_init()
-
-    def next_wl(self):
-        self.laser_device.next_wl()
-
+def new_laser_cont():
+    while True:
+        print("Choose laser source:\n1 - SIMTRUM Laser\n2 - PModLaser")
+        choice = int(input("Enter choice: "))
+        if choice == 1:
+            laser_device = SIMTRUMlaserClass()
+            print(laser_device)
+            break
+        elif choice == 2:
+            laser_device = pmodClass()
+            print(laser_device)
+            break
+    return laser_device
 
 
 
@@ -133,8 +124,9 @@ def main():
     
     try:
         # Instantiate OSA and laser objects which also initiates connection to both
-        # scpi = pyBristolSCPI()
-        laser = laserClass()
+        scpi = pyBristolSCPI()
+        # laser = laserClass()
+        laser = new_laser_cont()
         scpi.sendSimpleMsg(b'CALC2:SCAL PEAK\r\n')
         scpi.sendSimpleMsg(b'UNIT:POW DBM\r\n')
         scpi.sendSimpleMsg(b'UNIT:WAV NM\r\n')
@@ -201,7 +193,9 @@ def main():
             # Get n measurements and store to respective locations
             for i in range(0,n):
                 wl = scpi.readWL()
+                print(wl)
                 pow = scpi.readPOW()
+                print(pow)
 
                 if(1527<wl and wl<1568):
                     wl_plot.append(wl)
@@ -269,7 +263,8 @@ if __name__ == '__main__':
         mp.freeze_support()
         main()
         input("Enter to Close")
-    except:
-        print("Error")
-        input("Enter to Close")
+    except Exception as e:
+        raise e
+    print("Error")
+    input("Enter to Close")
 
