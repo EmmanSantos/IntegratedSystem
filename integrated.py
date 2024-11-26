@@ -3,7 +3,7 @@
 
 from pyBristolSCPI import *
 import time
-from laserRS232 import laserClass
+# from laserRS232 import SIMTRUMlaserClass
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import os
@@ -14,6 +14,22 @@ from pathvalidate import ValidationError, validate_filename
 import multiprocessing as mp
 import statistics as stat
 from math import log10
+
+class laserClass:
+    def __init__(self):
+        while True:
+            print("Choose laser source:\n1 - SIMTRUM Laser\n2 - PModLaser")
+            choice = int(input("Enter choice: "))
+            if choice == 1:
+                self.laser_device = "SIMTRUM"
+                print(self.laser_device)
+                break
+            elif choice == 2:
+                self.laser_device = "PMod"
+                print(self.laser_device)
+                break
+        
+            
 
 def mw_ave_to_dB(input_array):
     mw_array = []
@@ -106,7 +122,7 @@ def main():
     
     try:
         # Instantiate OSA and laser objects which also initiates connection to both
-        scpi = pyBristolSCPI()
+        # scpi = pyBristolSCPI()
         laser = laserClass()
         scpi.sendSimpleMsg(b'CALC2:SCAL PEAK\r\n')
         scpi.sendSimpleMsg(b'UNIT:POW DBM\r\n')
