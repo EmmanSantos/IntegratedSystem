@@ -3,7 +3,8 @@
 
 from pyBristolSCPI import *
 import time
-# from laserRS232 import SIMTRUMlaserClass
+from pmodRS232 import pmodClass
+from laserRS232 import SIMTRUMlaserClass
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import os
@@ -21,15 +22,25 @@ class laserClass:
             print("Choose laser source:\n1 - SIMTRUM Laser\n2 - PModLaser")
             choice = int(input("Enter choice: "))
             if choice == 1:
-                self.laser_device = "SIMTRUM"
                 print(self.laser_device)
+                self.laser_device = SIMTRUMlaserClass()
                 break
             elif choice == 2:
-                self.laser_device = "PMod"
+                self.laser_device = pmodClass()
                 print(self.laser_device)
                 break
-        
-            
+
+    def set_wl(self,ch_number):
+        self.laser_device.set_wl(ch_number)
+    
+    def sweep_init(self):
+        self.laser_device.sweep_init()
+
+    def next_wl(self):
+        self.laser_device.next_wl()
+
+
+
 
 def mw_ave_to_dB(input_array):
     mw_array = []
@@ -183,8 +194,6 @@ def main():
 
         #  Main sweep loop
         while laser.ch_in_range:
-            print("Wait 5s for laser to stabilize")
-            time.sleep(5)
             print("Current Channel: ",laser.curr_ch)
 
             #incremenets number of items to be averaged if wavelength is in range
