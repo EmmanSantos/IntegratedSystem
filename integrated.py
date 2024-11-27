@@ -56,7 +56,8 @@ def dir_create():
     dir_dict = {
         "csv_dir" : "./OUTPUT_FILES/csv_outputs",
         "ave_csv_dir" : "./OUTPUT_FILES/csv_averaged",
-        "graph_dir" :"./OUTPUT_FILES/graphs"
+        "graph_dir" :"./OUTPUT_FILES/graphs",
+        "wl_setting_graph_dir" :"./OUTPUT_FILES/graphs_wl_setting_as_x-axis"
     }
 
     for value in dir_dict.values():
@@ -256,6 +257,16 @@ def main():
         plt.ylabel("Output Power (dBm)")
         plt.grid(alpha=0.7)
         plt.savefig(dir_dict['graph_dir']+"/"+filename_ave+".png")
+        plt.close()
+
+        plt.close()
+        plt.figure(figsize=(15,7))
+        plt.plot(wl_setting_plot,ave_pow_plot)
+        plt.title(filename_ave+"_set_wl_xaxis")
+        plt.xlabel("Wavelength Setting (nm)")
+        plt.ylabel("Output Power (dBm)")
+        plt.grid(alpha=0.7)
+        plt.savefig(dir_dict['wl_setting_graph_dir']+"/"+filename_ave+"_set_wl_xaxis"+".png")
         plt.close()
 
         print("\nSweep Finished\nClose graph to continue")
