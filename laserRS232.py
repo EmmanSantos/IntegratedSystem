@@ -14,6 +14,9 @@ class SIMTRUMlaserClass:
         comport = 'COM4'
         ports = serial.tools.list_ports.comports()
 
+        #initialize wl_list
+        self.wl_list = [1567.1326, 1566.7231, 1566.3138, 1565.9047, 1565.4959, 1565.0872, 1564.6788, 1564.2706, 1563.8626, 1563.4548, 1563.0472, 1562.6399, 1562.2327, 1561.8258, 1561.4191, 1561.0125, 1560.6062, 1560.2001, 1559.7943, 1559.3886, 1558.9831, 1558.5779, 1558.1729, 1557.768, 1557.3634, 1556.959, 1556.5548, 1556.1508, 1555.7471, 1555.3435, 1554.9401, 1554.537, 1554.134, 1553.7313, 1553.3288, 1552.9265, 1552.5244, 1552.1225, 1551.7208, 1551.3193, 1550.918, 1550.517, 1550.1161, 1549.7155, 1549.315, 1548.9148, 1548.5148, 1548.1149, 1547.7153, 1547.3159, 1546.9167, 1546.5177, 1546.1189, 1545.7203, 1545.3219, 1544.9238, 1544.5258, 1544.128, 1543.7305, 1543.3331, 1542.936, 1542.539, 1542.1423, 1541.7457, 1541.3494, 1540.9533, 1540.5573, 1540.1616, 1539.7661, 1539.3708, 1538.9757, 1538.5807, 1538.186, 1537.7915, 1537.3972, 1537.0031, 1536.6092, 1536.2155, 1535.822, 1535.4287, 1535.0356, 1534.6427, 1534.25, 1533.8575, 1533.4653, 1533.0732, 1532.6813, 1532.2896, 1531.8981, 1531.5068, 1531.1157, 1530.7248, 1530.3341, 1529.9436, 1529.5534, 1529.1633, 1528.7734, 1528.3837, 1527.9942, 1527.6049]
+
         #Try connecting to default COM value
         try:
             self.laser_port = serial.Serial(comport)
@@ -49,6 +52,7 @@ class SIMTRUMlaserClass:
     
     #This function takes in a channel number and sends the corresponding byte array to the laser
     def set_wl(self,ch_number):
+        self.curr_wl = self.wl_list[ch_number-1] # update equivalent wavelength
         datah = ch_number//256
         datal = ch_number%256
         send_array = bytearray([0x00,0x01,0x01,datah,datal,datah+datal+2])
@@ -91,13 +95,14 @@ class SIMTRUMlaserClass:
                 [self.ch_start,self.ch_end,self.n_samples] = self.param_set()
         
         
+        self.first_run_ind = 0 
 
+    def start_wl(self):
         #set laser wavelength to channel start after initialization
         self.set_wl(self.ch_start)
         self.curr_ch = self.ch_start
         self.ch_in_range = True
-        self.first_run_ind = 0
-
+        
 
 
     #This function iterates through the channel numbers. Flags ch_in_range to indicate when the wavelengths are done

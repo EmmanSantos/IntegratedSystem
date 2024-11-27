@@ -38,19 +38,19 @@ class pyBristolSCPI:
     # @returns Double precision floating point peak wavelength.
     # @par Instruments:
     # All instruments
-    def readWL(self):
+    def readWL(self,wl):
         # msg = b':READ:WAV?\r\n'
         # out = self.getSimpleMsg(msg)
         # out.replace(b'\n\r',b'')
         # return float(out.decode('ascii'))
-        return (round(random.uniform(1527, 1567),4))
+        return (round(random.uniform(wl-1e-3, wl+1e-3),4))
     
     def readPOW(self):
         # msg = b':READ:POW?\r\n'
         # out = self.getSimpleMsg(msg)
         # out.replace(b'\n\r',b'')
         # return float(out.decode('ascii'))
-        return round(random.uniform(-25, -15),4)
+        return round(random.uniform(-20, -15),4)
 
     ## This function will handle a general skippy command that returns a single scalar response from the instrument.
     # @param msg - ASCII encoded SCPI command.

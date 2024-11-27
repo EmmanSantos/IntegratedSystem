@@ -183,19 +183,21 @@ def main():
         plot = mp.Process(target=plot_subproc,args=[x_q,y_q,filename])
         plot.start()
 
-
+        laser.start_wl() #put laser in start wl
+       
         #  Main sweep loop
         while laser.ch_in_range:
+            
+
             print("Current Channel: ",laser.curr_ch)
+            print("Current Wavelength Setting: ",laser.curr_wl)
 
             #incremenets number of items to be averaged if wavelength is in range
             ave_counter = 0 
             # Get n measurements and store to respective locations
             for i in range(0,n):
-                wl = scpi.readWL()
-                print(wl)
+                wl = scpi.readWL(laser.curr_wl)
                 pow = scpi.readPOW()
-                print(pow)
 
                 if(1527<wl and wl<1568):
                     wl_plot.append(wl)
