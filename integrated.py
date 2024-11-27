@@ -188,7 +188,7 @@ def main():
         wl_setting_plot = [] #array for set wavelength
         ave_pow_plot = []
             
-        input("Press Enter to Start Sweep")
+        input("\nPress Enter to Start Sweep")
 
         # Instantation  for Queues; queues can be passed between subprocesses and thus used for passing data
         y_q = mp.Queue()
@@ -203,8 +203,8 @@ def main():
         #  Main sweep loop
         while laser.ch_in_range:
             
-
-            print("Current Channel: ",laser.curr_ch)
+            
+            print("Current Channel/WL setting no.: ",laser.curr_ch)
             print("Current Wavelength Setting: ",laser.curr_wl)
             wl_setting = laser.curr_wl #store curr wl setting
 
@@ -297,6 +297,6 @@ if __name__ == '__main__':
         input("Enter to Close")
     except Exception as e:
         raise e
-    print("Error")
+    print("Error: {}".format(e))
     input("Enter to Close")
 

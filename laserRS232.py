@@ -108,6 +108,7 @@ class SIMTRUMlaserClass:
     #This function iterates through the channel numbers. Flags ch_in_range to indicate when the wavelengths are done
     def next_wl(self):
         self.curr_ch = self.curr_ch - 1
-        self.set_wl(self.curr_ch)
-        if self.curr_ch < self.ch_end:
+        if self.curr_ch < self.ch_end: #stop condition
             self.ch_in_range = False
+            return
+        self.set_wl(self.curr_ch)

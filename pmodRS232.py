@@ -1,13 +1,16 @@
 import serial
 import serial.tools.list_ports
+from time import sleep
+from pmod_sweep_util import settings_list_gen
 
 class pmodClass:
     #This function initializes RS232 connection with the laser
     def __init__(self):
         #initialize default variables as well as default com port
         self.n_samples = 10
-        self.ch_start = 100
-        self.ch_end = 1
+        self.wl_start = 1527.371398
+        self.wl_end = 1565.49586423
+        self.stepsize = 100
         self.first_run_ind = 1
         comport = 'COM4'
         ports = serial.tools.list_ports.comports()
@@ -58,3 +61,76 @@ class pmodClass:
                 except:
                     print("\nInvalid COM number\nTry Again\n")
                     continue
+
+    #This function takes in a channel number and sends the corresponding byte array to the laser
+    def set_wl(self,settings):
+        self.curr_wl = 299792458/(settings[1]+settings[2])*1e3 # update equivalent wavelength nm
+
+        command = 'LAS:CHAN: '+str(settings[0])
+        self.pmod_port.write(command.encode())
+
+        sleep(0.5)
+
+        command = 'LAS:FINE: '+str(settings[1])
+        self.pmod_port.write(command.encode())
+
+        print("Wait 5s for laser to stabilize")
+        sleep(5)
+
+         #This section runs the routine for setting the sweep parameters
+    def param_set(self):
+                print("\n \nSET SWEEP PARAMETERS")
+                inp_loop = True
+                while inp_loop:
+                    print("Wavelength Start must be lower than Wavelength end\n",
+                          "Minimum Wavelength (nm): 1527.371398\n",
+                          "Maximum Wavelength (nm): 1565.49586423\n",
+                          "Minimum step size (pm): 1 (2pm step size is smallest recommended)")
+                    arg_wl_start = float(input("Wavelength Start (nm): "))
+                    arg_wl_end = float(input("Wavelength End(nm): "))
+                    arg_stepsize = float(input("Stepsize (pm): "))
+                    arg_n_samples = int(input("Samples per Wavelength: "))
+                    if arg_wl_start<arg_wl_end and (arg_wl_end<=1565.49586423) and arg_wl_start>=1527.371398 and arg_stepsize>=1:
+                        break
+                    print("\nINVALID VALUE/S \n")   
+
+                return [arg_wl_start,arg_wl_end,arg_stepsize,arg_n_samples]
+
+
+    #This function runs the initialization of a sweep; includes resetting the wavelength and other variables
+    def sweep_init(self):
+        
+        if(self.first_run_ind == 1):
+            print("\nDEFAULT PARAMETERS")
+            print("Wavelength Start  (nm): ",str(self.wl_start))
+            print("Wavelength End  (nm): ",str(self.wl_end))
+            print("Step size (pm):",str(self.stepsize))
+            print("Samples per wavelength: ",str(self.n_samples))
+            if(input("Would you like to enter different parameters?(y/n)").lower() == 'y'):
+                [self.wl_start,self.wl_end,self.stepsize,self.n_samples] = self.param_set()
+        else:
+            print("\nLAST RUN PARMETERS")
+            print("Wavelength Start: ",str(self.wl_start))
+            print("Wavelength End: ",str(self.wl_end))
+            print("Samples per wavelength: ",str(self.n_samples))
+            print("Step size (pm):",str(self.stepsize))
+            if(input("Would you like to enter new parameters?(y/n)").lower() == 'y'):
+                [self.wl_start,self.wl_end,self.stepsize,self.n_samples] = self.param_set()
+        
+        self.settings_list = settings_list_gen(self.wl_start,self.wl_end,self.stepsize)
+        
+        self.first_run_ind = 0
+
+    def start_wl(self):
+        #set laser wavelength to channel start after initialization
+        self.curr_ch = 1 # 1 is first setting for ui purposes
+        self.set_wl(self.settings_list[self.curr_ch-1])
+        self.ch_in_range = True 
+
+    #This function iterates through the channel numbers. Flags ch_in_range to indicate when the wavelengths are done
+    def next_wl(self):
+        self.curr_ch = self.curr_ch + 1
+        if self.curr_ch > len(self.settings_list): #stop conditon
+            self.ch_in_range = False
+            return
+        self.set_wl(self.settings_list[self.curr_ch-1])
