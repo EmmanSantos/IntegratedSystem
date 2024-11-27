@@ -105,16 +105,29 @@ def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
     #     
     #     plt.pause(0.1)
 
-def store_to_csv(name,dir,col1,col2):
+# def store_to_csv(name,dir,col1,col2):
 
+#     with open(dir+"/"+name+".csv", mode='w', newline='') as file:
+#         csv_writer = csv.writer(file)
+#         header = ['Wavelength', 'Power']
+#         csv_writer.writerow([name])
+#         csv_writer.writerow(header)
+
+#         for i in range(0,len(col1)):
+#             csv_writer.writerow([col1[i],col2[i]])
+
+def store_to_csv(name,dir,header,col_arr):
+    n_col = len(col_arr)
     with open(dir+"/"+name+".csv", mode='w', newline='') as file:
         csv_writer = csv.writer(file)
-        header = ['Wavelength', 'Power']
         csv_writer.writerow([name])
         csv_writer.writerow(header)
 
-        for i in range(0,len(col1)):
-            csv_writer.writerow([col1[i],col2[i]])
+        for i in range(0,len(col_arr[0])):
+            row = []
+            for j in range(0,n_col):
+                row.append(col_arr[j][i])
+            csv_writer.writerow(row)
 
 
 def main():
@@ -171,6 +184,7 @@ def main():
         pow_plot = []
 
         ave_wl_plot = []
+        wl_setting_plot = [] #array for set wavelength
         ave_pow_plot = []
             
         input("Press Enter to Start Sweep")
@@ -191,6 +205,7 @@ def main():
 
             print("Current Channel: ",laser.curr_ch)
             print("Current Wavelength Setting: ",laser.curr_wl)
+            wl_setting = laser.curr_wl #store curr wl setting
 
             #incremenets number of items to be averaged if wavelength is in range
             ave_counter = 0 
@@ -213,21 +228,25 @@ def main():
             laser.next_wl()
             #Get average wl and pow of last n measurements 
             if ave_counter>0:
-                # ave_wl_plot.append(stat.mean(wl_plot[-n:]))
-                # ave_pow_plot.append(stat.mean(pow_plot[-n:]))
+                
                 ave_wl_plot.append(mw_ave_to_dB(wl_plot[-n:]))
+                wl_setting_plot.append(wl_setting)
                 ave_pow_plot.append(mw_ave_to_dB(pow_plot[-n:]))
                 
-                store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
-                store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
+                # store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
+                # store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
+                store_to_csv(filename,dir_dict['csv_dir'],['Wavelength', 'Power'],[wl_plot,pow_plot])
+                store_to_csv(filename_ave,dir_dict['ave_csv_dir'],['Wavelength Setting','Wavelength', 'Power'],[wl_setting_plot,ave_wl_plot,ave_pow_plot])
+
 
             else:
                 print("Average not executed, n = 0")
             
         plot.terminate()
 
-        store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
-        store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
+        store_to_csv(filename,dir_dict['csv_dir'],['Wavelength', 'Power'],[wl_plot,pow_plot])
+        store_to_csv(filename_ave,dir_dict['ave_csv_dir'],['Wavelength Setting','Wavelength', 'Power'],[wl_setting_plot,ave_wl_plot,ave_pow_plot])
+
             
         plt.close()
         plt.figure(figsize=(15,7))
