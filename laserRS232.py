@@ -57,8 +57,8 @@ class SIMTRUMlaserClass:
         datal = ch_number%256
         send_array = bytearray([0x00,0x01,0x01,datah,datal,datah+datal+2])
         self.laser_port.write(send_array)
-        print("Wait 5s for laser to stabilize")
-        sleep(5)
+        # print("Wait 5s for laser to stabilize")
+        # sleep(5)
 
     #This section runs the routine for setting the sweep parameters
     def param_set(self):

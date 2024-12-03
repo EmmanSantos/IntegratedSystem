@@ -1,7 +1,8 @@
 
 
 
-from pyBristolSCPI_TB import *
+from pyBristolSCPI_TB import * #TB code
+# from pyBristolSCPI import *
 import time
 from pmodRS232 import pmodClass
 from laserRS232 import SIMTRUMlaserClass
@@ -15,6 +16,7 @@ from pathvalidate import ValidationError, validate_filename
 import multiprocessing as mp
 import statistics as stat
 from math import log10
+from tqdm import tqdm
 
 
 def new_laser_cont():
@@ -206,13 +208,41 @@ def main():
             
             print("Current Channel/WL setting no.: ",laser.curr_ch)
             print("Current Wavelength Setting: ",laser.curr_wl)
-            wl_setting = laser.curr_wl #store curr wl setting
+            laser_stable = False
+
+            #create progress bar
+            progress_bar = tqdm(total=10, desc="WL Reading: "+"| Error: "+"| Stability Count", bar_format="{desc}: {n}/{total}")
+            stab_counter = 0
+            
+            # Waits until laser wavelength is less than error threshold for n consecutive measurements
+            while not laser_stable:
+                time.sleep(2)
+                wl_stab_check = scpi.readWL(laser.curr_wl) #TB code
+                # wl_reading = scpi.readWL()
+                
+                stab_check_error = laser.curr_wl-wl_stab_check
+
+                if abs(stab_check_error)<= 0.002: 
+                    stab_counter = stab_counter + 1
+                else:
+                    stab_counter = 0
+
+                if stab_counter == 10:
+                    laser_stable = True
+
+                progress_bar.desc = "WL Reading: "+str(wl_stab_check)+"| Error: "+str(round(stab_check_error,4))+"| Stability Count"
+                progress_bar.n = stab_counter
+                progress_bar.refresh()
+                
+            wl_setting = laser.curr_wl #store curr wl setting           
+            progress_bar.close()
 
             #incremenets number of items to be averaged if wavelength is in range
             ave_counter = 0 
             # Get n measurements and store to respective locations
             for i in range(0,n):
-                wl = scpi.readWL(laser.curr_wl)
+                wl = scpi.readWL(laser.curr_wl) #TB code
+                # wl = scpi.readWL()
                 pow = scpi.readPOW()
 
                 if(1527<wl and wl<1568):
@@ -294,9 +324,9 @@ if __name__ == '__main__':
         print('Running Integrated System')
         mp.freeze_support()
         main()
-        input("Enter to Close")
     except Exception as e:
+        print("Error: {}".format(e))
         raise e
-    print("Error: {}".format(e))
+    
     input("Enter to Close")
 

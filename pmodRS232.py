@@ -2,6 +2,7 @@ import serial
 import serial.tools.list_ports
 from time import sleep
 from pmod_sweep_util import settings_list_gen
+from tqdm import tqdm
 
 class pmodClass:
     #This function initializes RS232 connection with the laser
@@ -14,6 +15,7 @@ class pmodClass:
         self.first_run_ind = 1
         comport = 'COM4'
         ports = serial.tools.list_ports.comports()
+        self.prev_ch = 0
 
         #Try connecting to default COM value
         try:
@@ -66,16 +68,26 @@ class pmodClass:
     def set_wl(self,settings):
         self.curr_wl = 299792458/(settings[1]+settings[2])*1e3 # update equivalent wavelength nm
 
-        command = 'LAS:CHAN: '+str(settings[0])
+        command = 'LAS:CHAN: '+str(settings[0]) + '\r'
         self.pmod_port.write(command.encode())
+        # print(command)
 
-        sleep(0.5)
+        sleep(1)
 
-        command = 'LAS:FINE: '+str(settings[1])
+        command = 'LAS:FINE: '+str(settings[1]) + '\r'
         self.pmod_port.write(command.encode())
-
-        print("Wait 5s for laser to stabilize")
-        sleep(5)
+        
+        
+        # if settings[0] != self.prev_ch:
+        #     print("Wait 120s due to channel change")
+        #     for i in tqdm(range(120),desc="Waiting", bar_format="{desc}: {n}/{total}"):
+        #         sleep(1)
+        #     self.prev_ch = settings[0]
+        # else:
+        #     print("Wait 30s for laser to stabilize")
+        #     for i in tqdm(range(30),desc="Waiting", bar_format="{desc}: {n}/{total}"):
+        #         sleep(1)
+        #     self.prev_ch = settings[0]
 
          #This section runs the routine for setting the sweep parameters
     def param_set(self):
@@ -120,6 +132,7 @@ class pmodClass:
         self.settings_list = settings_list_gen(self.wl_start,self.wl_end,self.stepsize)
         
         self.first_run_ind = 0
+        self.prev_ch = 0
 
     def start_wl(self):
         #set laser wavelength to channel start after initialization

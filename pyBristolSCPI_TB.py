@@ -43,7 +43,7 @@ class pyBristolSCPI:
         # out = self.getSimpleMsg(msg)
         # out.replace(b'\n\r',b'')
         # return float(out.decode('ascii'))
-        return (round(random.uniform(wl-1e-3, wl+1e-3),4))
+        return (round(random.uniform(wl-2.1e-3, wl+2.1e-3),4))
     
     def readPOW(self):
         # msg = b':READ:POW?\r\n'
