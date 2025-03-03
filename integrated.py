@@ -1,8 +1,8 @@
 
 
 
-from pyBristolSCPI_TB import * #TB code
-# from pyBristolSCPI import *
+# from pyBristolSCPI_TB import * #TB code
+from pyBristolSCPI import *
 import time
 from pmodRS232 import pmodClass
 from laserRS232 import SIMTRUMlaserClass
@@ -43,10 +43,10 @@ def stability_delay(scpi:pyBristolSCPI,laser,source_device):
         # Waits until laser wavelength is less than error threshold for n consecutive measurements
         while not laser_stable:
             time.sleep(1)
-            wl_stab_check = scpi.readWL(laser.curr_wl) #TB code
-            # wl_reading = scpi.readWL()
+            # wl_reading = scpi.readWL(laser.curr_wl) #TB code
+            wl_reading = scpi.readWL()
             
-            stab_check_error = laser.curr_wl-wl_stab_check
+            stab_check_error = laser.curr_wl-wl_reading
 
             if abs(stab_check_error)<= 0.002: 
                 stab_counter = stab_counter + 1
@@ -56,7 +56,7 @@ def stability_delay(scpi:pyBristolSCPI,laser,source_device):
             if stab_counter == 10:
                 laser_stable = True
 
-            progress_bar.desc = "WL Reading: "+str(wl_stab_check)+"| Error: "+str(round(stab_check_error,4))+"| Stability Count"
+            progress_bar.desc = "WL Reading: "+str(wl_reading)+"| Error: "+str(round(stab_check_error,4))+"| Stability Count"
             progress_bar.n = stab_counter
             progress_bar.refresh()
             
