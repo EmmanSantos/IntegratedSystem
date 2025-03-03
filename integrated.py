@@ -33,6 +33,40 @@ def new_laser_cont():
             break
     return laser_device
 
+def stability_delay(scpi:pyBristolSCPI,laser,source_device):
+    laser_stable = False
+    if source_device =='pmod':
+        #create progress bar
+        progress_bar = tqdm(total=10, desc="WL Reading: "+"| Error: "+"| Stability Count", bar_format="{desc}: {n}/{total}")
+        stab_counter = 0
+
+        # Waits until laser wavelength is less than error threshold for n consecutive measurements
+        while not laser_stable:
+            time.sleep(1)
+            wl_stab_check = scpi.readWL(laser.curr_wl) #TB code
+            # wl_reading = scpi.readWL()
+            
+            stab_check_error = laser.curr_wl-wl_stab_check
+
+            if abs(stab_check_error)<= 0.002: 
+                stab_counter = stab_counter + 1
+            else:
+                stab_counter = 0
+
+            if stab_counter == 10:
+                laser_stable = True
+
+            progress_bar.desc = "WL Reading: "+str(wl_stab_check)+"| Error: "+str(round(stab_check_error,4))+"| Stability Count"
+            progress_bar.n = stab_counter
+            progress_bar.refresh()
+            
+                 
+        progress_bar.close()
+
+    elif source_device=='simtrum':
+        print("Wait 5s for laser to stabilize")
+        time.sleep(5)
+
 
 
 def mw_ave_to_dB(input_array):
@@ -208,34 +242,9 @@ def main():
             
             print("Current Channel/WL setting no.: ",laser.curr_ch)
             print("Current Wavelength Setting: ",laser.curr_wl)
-            laser_stable = False
 
-            #create progress bar
-            progress_bar = tqdm(total=10, desc="WL Reading: "+"| Error: "+"| Stability Count", bar_format="{desc}: {n}/{total}")
-            stab_counter = 0
-            
-            # Waits until laser wavelength is less than error threshold for n consecutive measurements
-            while not laser_stable:
-                time.sleep(2)
-                wl_stab_check = scpi.readWL(laser.curr_wl) #TB code
-                # wl_reading = scpi.readWL()
-                
-                stab_check_error = laser.curr_wl-wl_stab_check
-
-                if abs(stab_check_error)<= 0.002: 
-                    stab_counter = stab_counter + 1
-                else:
-                    stab_counter = 0
-
-                if stab_counter == 10:
-                    laser_stable = True
-
-                progress_bar.desc = "WL Reading: "+str(wl_stab_check)+"| Error: "+str(round(stab_check_error,4))+"| Stability Count"
-                progress_bar.n = stab_counter
-                progress_bar.refresh()
-                
-            wl_setting = laser.curr_wl #store curr wl setting           
-            progress_bar.close()
+            stability_delay(scpi,laser,laser.source_device)
+            wl_setting = laser.curr_wl #store curr wl setting  
 
             #incremenets number of items to be averaged if wavelength is in range
             ave_counter = 0 

@@ -15,6 +15,8 @@ class pmodClass:
         self.first_run_ind = 1
         comport = 'COM4'
         ports = serial.tools.list_ports.comports()
+        self.source_device = 'pmod'
+
         self.prev_ch = 0
 
         #Try connecting to default COM value
