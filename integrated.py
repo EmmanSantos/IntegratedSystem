@@ -1,9 +1,11 @@
 
 
 
+# from pyBristolSCPI_TB import * #TB code
 from pyBristolSCPI import *
 import time
-from laserRS232 import laserClass
+from pmodRS232 import pmodClass
+from laserRS232 import SIMTRUMlaserClass
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import os
@@ -14,6 +16,58 @@ from pathvalidate import ValidationError, validate_filename
 import multiprocessing as mp
 import statistics as stat
 from math import log10
+from tqdm import tqdm
+
+
+def new_laser_cont():
+    while True:
+        print("Choose laser source:\n1 - SIMTRUM Laser\n2 - PModLaser")
+        choice = int(input("Enter choice: "))
+        if choice == 1:
+            laser_device = SIMTRUMlaserClass()
+            print(laser_device)
+            break
+        elif choice == 2:
+            laser_device = pmodClass()
+            print(laser_device)
+            break
+    return laser_device
+
+def stability_delay(scpi:pyBristolSCPI,laser,source_device):
+    laser_stable = False
+    if source_device =='pmod':
+        #create progress bar
+        progress_bar = tqdm(total=10, desc="WL Reading: "+"| Error: "+"| Stability Count", bar_format="{desc}: {n}/{total}")
+        stab_counter = 0
+
+        # Waits until laser wavelength is less than error threshold for n consecutive measurements
+        while not laser_stable:
+            time.sleep(1)
+            # wl_reading = scpi.readWL(laser.curr_wl) #TB code
+            wl_reading = scpi.readWL()
+            
+            stab_check_error = laser.curr_wl-wl_reading
+
+            if abs(stab_check_error)<= 0.002: 
+                stab_counter = stab_counter + 1
+            else:
+                stab_counter = 0
+
+            if stab_counter == 10:
+                laser_stable = True
+
+            progress_bar.desc = "WL Reading: "+str(wl_reading)+"| Error: "+str(round(stab_check_error,4))+"| Stability Count"
+            progress_bar.n = stab_counter
+            progress_bar.refresh()
+            
+                 
+        progress_bar.close()
+
+    elif source_device=='simtrum':
+        print("Wait 5s for laser to stabilize")
+        time.sleep(5)
+
+
 
 def mw_ave_to_dB(input_array):
     mw_array = []
@@ -38,7 +92,8 @@ def dir_create():
     dir_dict = {
         "csv_dir" : "./OUTPUT_FILES/csv_outputs",
         "ave_csv_dir" : "./OUTPUT_FILES/csv_averaged",
-        "graph_dir" :"./OUTPUT_FILES/graphs"
+        "graph_dir" :"./OUTPUT_FILES/graphs",
+        "wl_setting_graph_dir" :"./OUTPUT_FILES/graphs_wl_setting_as_x-axis"
     }
 
     for value in dir_dict.values():
@@ -87,16 +142,29 @@ def plot_subproc(x_q: mp.Queue,y_q: mp.Queue,name):
     #     
     #     plt.pause(0.1)
 
-def store_to_csv(name,dir,col1,col2):
+# def store_to_csv(name,dir,col1,col2):
 
+#     with open(dir+"/"+name+".csv", mode='w', newline='') as file:
+#         csv_writer = csv.writer(file)
+#         header = ['Wavelength', 'Power']
+#         csv_writer.writerow([name])
+#         csv_writer.writerow(header)
+
+#         for i in range(0,len(col1)):
+#             csv_writer.writerow([col1[i],col2[i]])
+
+def store_to_csv(name,dir,header,col_arr):
+    n_col = len(col_arr)
     with open(dir+"/"+name+".csv", mode='w', newline='') as file:
         csv_writer = csv.writer(file)
-        header = ['Wavelength', 'Power']
         csv_writer.writerow([name])
         csv_writer.writerow(header)
 
-        for i in range(0,len(col1)):
-            csv_writer.writerow([col1[i],col2[i]])
+        for i in range(0,len(col_arr[0])):
+            row = []
+            for j in range(0,n_col):
+                row.append(col_arr[j][i])
+            csv_writer.writerow(row)
 
 
 def main():
@@ -107,7 +175,8 @@ def main():
     try:
         # Instantiate OSA and laser objects which also initiates connection to both
         scpi = pyBristolSCPI()
-        laser = laserClass()
+        # laser = laserClass()
+        laser = new_laser_cont()
         scpi.sendSimpleMsg(b'CALC2:SCAL PEAK\r\n')
         scpi.sendSimpleMsg(b'UNIT:POW DBM\r\n')
         scpi.sendSimpleMsg(b'UNIT:WAV NM\r\n')
@@ -152,9 +221,10 @@ def main():
         pow_plot = []
 
         ave_wl_plot = []
+        wl_setting_plot = [] #array for set wavelength
         ave_pow_plot = []
             
-        input("Press Enter to Start Sweep")
+        input("\nPress Enter to Start Sweep")
 
         # Instantation  for Queues; queues can be passed between subprocesses and thus used for passing data
         y_q = mp.Queue()
@@ -164,17 +234,23 @@ def main():
         plot = mp.Process(target=plot_subproc,args=[x_q,y_q,filename])
         plot.start()
 
-
+        laser.start_wl() #put laser in start wl
+       
         #  Main sweep loop
         while laser.ch_in_range:
-            print("Wait 5s for laser to stabilize")
-            time.sleep(5)
-            print("Current Channel: ",laser.curr_ch)
+            
+            
+            print("Current Channel/WL setting no.: ",laser.curr_ch)
+            print("Current Wavelength Setting: ",laser.curr_wl)
+
+            stability_delay(scpi,laser,laser.source_device)
+            wl_setting = laser.curr_wl #store curr wl setting  
 
             #incremenets number of items to be averaged if wavelength is in range
             ave_counter = 0 
             # Get n measurements and store to respective locations
             for i in range(0,n):
+                # wl = scpi.readWL(laser.curr_wl) #TB code
                 wl = scpi.readWL()
                 pow = scpi.readPOW()
 
@@ -192,21 +268,25 @@ def main():
             laser.next_wl()
             #Get average wl and pow of last n measurements 
             if ave_counter>0:
-                # ave_wl_plot.append(stat.mean(wl_plot[-n:]))
-                # ave_pow_plot.append(stat.mean(pow_plot[-n:]))
+                
                 ave_wl_plot.append(mw_ave_to_dB(wl_plot[-n:]))
+                wl_setting_plot.append(wl_setting)
                 ave_pow_plot.append(mw_ave_to_dB(pow_plot[-n:]))
                 
-                store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
-                store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
+                # store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
+                # store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
+                store_to_csv(filename,dir_dict['csv_dir'],['Wavelength', 'Power'],[wl_plot,pow_plot])
+                store_to_csv(filename_ave,dir_dict['ave_csv_dir'],['Wavelength Setting','Wavelength', 'Power'],[wl_setting_plot,ave_wl_plot,ave_pow_plot])
+
 
             else:
                 print("Average not executed, n = 0")
             
         plot.terminate()
 
-        store_to_csv(filename,dir_dict['csv_dir'],wl_plot,pow_plot)
-        store_to_csv(filename_ave,dir_dict['ave_csv_dir'],ave_wl_plot,ave_pow_plot)
+        store_to_csv(filename,dir_dict['csv_dir'],['Wavelength', 'Power'],[wl_plot,pow_plot])
+        store_to_csv(filename_ave,dir_dict['ave_csv_dir'],['Wavelength Setting','Wavelength', 'Power'],[wl_setting_plot,ave_wl_plot,ave_pow_plot])
+
             
         plt.close()
         plt.figure(figsize=(15,7))
@@ -216,6 +296,16 @@ def main():
         plt.ylabel("Output Power (dBm)")
         plt.grid(alpha=0.7)
         plt.savefig(dir_dict['graph_dir']+"/"+filename_ave+".png")
+        plt.close()
+
+        plt.close()
+        plt.figure(figsize=(15,7))
+        plt.plot(wl_setting_plot,ave_pow_plot)
+        plt.title(filename_ave+"_set_wl_xaxis")
+        plt.xlabel("Wavelength Setting (nm)")
+        plt.ylabel("Output Power (dBm)")
+        plt.grid(alpha=0.7)
+        plt.savefig(dir_dict['wl_setting_graph_dir']+"/"+filename_ave+"_set_wl_xaxis"+".png")
         plt.close()
 
         print("\nSweep Finished\nClose graph to continue")
@@ -243,8 +333,9 @@ if __name__ == '__main__':
         print('Running Integrated System')
         mp.freeze_support()
         main()
-        input("Enter to Close")
-    except:
-        print("Error")
-        input("Enter to Close")
+    except Exception as e:
+        print("Error: {}".format(e))
+        raise e
+    
+    input("Enter to Close")
 
