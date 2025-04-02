@@ -250,8 +250,8 @@ def main():
             ave_counter = 0 
             # Get n measurements and store to respective locations
             for i in range(0,n):
-                wl = scpi.readWL(laser.curr_wl) #TB code
-                # wl = scpi.readWL()
+                # wl = scpi.readWL(laser.curr_wl) #TB code
+                wl = scpi.readWL()
                 pow = scpi.readPOW()
 
                 if(1527<wl and wl<1568):

@@ -8,13 +8,20 @@ class pmodClass:
     #This function initializes RS232 connection with the laser
     def __init__(self):
         #initialize default variables as well as default com port
+
         self.n_samples = 10
         self.wl_start = 1527.371398
         self.wl_end = 1565.49586423
         self.stepsize = 100
         self.first_run_ind = 1
-        comport = 'COM4'
+        
         ports = serial.tools.list_ports.comports()
+        for port in ports:
+                print(f"Port: {port.device}")
+                print(f"Description: {port.description}")
+                print(f"Hardware ID: {port.hwid}\n")
+
+        comport = 'COM'+input("Enter Prolific COM Port number: ")
         self.source_device = 'pmod'
 
         self.prev_ch = 0
