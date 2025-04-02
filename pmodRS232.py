@@ -2,6 +2,7 @@ import serial
 import serial.tools.list_ports
 from time import sleep
 from pmod_sweep_util import settings_list_gen
+from pmod_sweep_util import coarse_settings_list_gen
 from tqdm import tqdm
 
 class pmodClass:
@@ -14,6 +15,9 @@ class pmodClass:
         self.wl_end = 1565.49586423
         self.stepsize = 100
         self.first_run_ind = 1
+
+        self.ch_start = 96
+        self.ch_end = 1
         
         ports = serial.tools.list_ports.comports()
         for port in ports:
@@ -116,29 +120,65 @@ class pmodClass:
                     print("\nINVALID VALUE/S \n")   
 
                 return [arg_wl_start,arg_wl_end,arg_stepsize,arg_n_samples]
+    
+    def coarse_param_set(self):
+        print("\n \nSET SWEEP PARAMETERS")
+        inp_loop = True
+        while inp_loop:
+            print("Refer to the spreadsheet in the C-Band Laser Gdrive folder for the equivalent wavelength \nChannel Start must be higher than channel end")
+            arg_ch_start = int(input("Channel Start (1-96): "))
+            arg_ch_end = int(input("Channel End (1-96): "))
+            arg_n_samples = int(input("Samples per Wavelength: "))
+            if arg_ch_start>arg_ch_end and (arg_ch_end<=96) and arg_ch_start<=96 :
+                break
+            print("\nINVALID VALUE/S \n")
+
+        return [arg_ch_start,arg_ch_end,arg_n_samples]   
 
 
     #This function runs the initialization of a sweep; includes resetting the wavelength and other variables
     def sweep_init(self):
-        
-        if(self.first_run_ind == 1):
-            print("\nDEFAULT PARAMETERS")
-            print("Wavelength Start  (nm): ",str(self.wl_start))
-            print("Wavelength End  (nm): ",str(self.wl_end))
-            print("Step size (pm):",str(self.stepsize))
-            print("Samples per wavelength: ",str(self.n_samples))
-            if(input("Would you like to enter different parameters?(y/n)").lower() == 'y'):
-                [self.wl_start,self.wl_end,self.stepsize,self.n_samples] = self.param_set()
+        if(input("Coarse mode (channel step) or Fine mode(fine freq step)? (c/f)").lower() == 'f'):
+            if(self.first_run_ind == 1):
+                print("\nDEFAULT PARAMETERS")
+                print("Wavelength Start  (nm): ",str(self.wl_start))
+                print("Wavelength End  (nm): ",str(self.wl_end))
+                print("Step size (pm):",str(self.stepsize))
+                print("Samples per wavelength: ",str(self.n_samples))
+                if(input("Would you like to enter different parameters?(y/n)").lower() == 'y'):
+                    [self.wl_start,self.wl_end,self.stepsize,self.n_samples] = self.param_set()
+            else:
+                print("\nLAST RUN PARMETERS")
+                print("Wavelength Start: ",str(self.wl_start))
+                print("Wavelength End: ",str(self.wl_end))
+                print("Samples per wavelength: ",str(self.n_samples))
+                print("Step size (pm):",str(self.stepsize))
+                if(input("Would you like to enter new parameters?(y/n)").lower() == 'y'):
+                    [self.wl_start,self.wl_end,self.stepsize,self.n_samples] = self.param_set()
+            
+            self.settings_list = settings_list_gen(self.wl_start,self.wl_end,self.stepsize)
+
+
+
         else:
-            print("\nLAST RUN PARMETERS")
-            print("Wavelength Start: ",str(self.wl_start))
-            print("Wavelength End: ",str(self.wl_end))
-            print("Samples per wavelength: ",str(self.n_samples))
-            print("Step size (pm):",str(self.stepsize))
-            if(input("Would you like to enter new parameters?(y/n)").lower() == 'y'):
-                [self.wl_start,self.wl_end,self.stepsize,self.n_samples] = self.param_set()
+            if(self.first_run_ind == 1):
+                print("\nDEFAULT PARAMETERS")
+                print("Channel Start: ",str(self.ch_start))
+                print("Channel End: ",str(self.ch_end))
+                print("Samples per wavelength: ",str(self.n_samples))
+                if(input("Would you like to enter different parameters?(y/n)").lower() == 'y'):
+                    [self.ch_start,self.ch_end,self.n_samples] = self.coarse_param_set()
+            else:
+                print("\nLAST RUN PARMETERS")
+                print("Channel Start: ",str(self.ch_start))
+                print("Channel End: ",str(self.ch_end))
+                print("Samples per wavelength: ",str(self.n_samples))
+                if(input("Would you like to enter new parameters?(y/n)").lower() == 'y'):
+                    [self.ch_start,self.ch_end,self.n_samples] = self.coarse_param_set()
+            
+            self.settings_list = coarse_settings_list_gen(self.ch_start,self.ch_end)
+
         
-        self.settings_list = settings_list_gen(self.wl_start,self.wl_end,self.stepsize)
         
         self.first_run_ind = 0
         self.prev_ch = 0
